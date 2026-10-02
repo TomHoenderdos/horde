@@ -22,7 +22,12 @@ defmodule Horde.SignalShutdown do
   @spec terminate(term(), [GenServer.server()]) :: :ok
   def terminate(_reason, signal_to) do
     Enum.each(signal_to, fn destination ->
-      :ok = GenServer.call(destination, :horde_shutting_down)
+      try do
+        :ok = GenServer.call(destination, :horde_shutting_down)
+      catch
+        # the destination might already be down, e.g. when its crash is what stops us
+        :exit, _reason -> :ok
+      end
     end)
   end
 end
