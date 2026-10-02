@@ -149,16 +149,14 @@ defmodule MyRegistry do
     end
   end
 
-  def pid() do
-    Process.whereis(__MODULE__)
-  end
-
   def alive?(node) do
     :erpc.call(node, MyRegistry, :alive?, [])
+  catch
+    :error, {:erpc, :noconnection} -> false
   end
 
   def alive?() do
-    case pid() do
+    case Process.whereis(__MODULE__) do
       pid when is_pid(pid) ->
         Process.alive?(pid)
 
@@ -191,16 +189,14 @@ defmodule MySupervisor do
     Horde.DynamicSupervisor.init(args)
   end
 
-  def pid() do
-    Process.whereis(__MODULE__)
-  end
-
   def alive?(node) do
     :erpc.call(node, MySupervisor, :alive?, [])
+  catch
+    :error, {:erpc, :noconnection} -> false
   end
 
   def alive?() do
-    case pid() do
+    case Process.whereis(__MODULE__) do
       pid when is_pid(pid) ->
         Process.alive?(pid)
 
