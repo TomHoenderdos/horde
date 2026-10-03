@@ -659,7 +659,7 @@ defmodule Horde.DynamicSupervisorImpl do
 
   defp processes_for_node(node_name) do
     fn
-      {_id, {^node_name, _child_spec, _child_pid}} -> true
+      {^node_name, _child_spec, _child_pid} -> true
       _ -> false
     end
   end
