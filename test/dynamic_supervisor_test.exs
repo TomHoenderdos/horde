@@ -633,6 +633,41 @@ defmodule DynamicSupervisorTest do
     assert :ok == Horde.DynamicSupervisor.wait_for_quorum(:horde_quorum_2, 1000)
   end
 
+  defmodule LocalQuorumOfTwo do
+    @behaviour Horde.DistributionStrategy
+
+    @moduledoc """
+    Places every process on the node that starts it, and needs two alive members for quorum
+    """
+
+    def choose_node(_child_spec, members) do
+      {:ok, Enum.find(members, fn %{name: {name, _node}} -> Process.whereis(name) == self() end)}
+    end
+
+    def has_quorum?(members), do: Enum.count(members, &match?(%{status: :alive}, &1)) >= 2
+  end
+
+  test "losing quorum stops the local processes" do
+    name = :"horde_#{:rand.uniform(100_000_000)}"
+
+    start_supervised!(
+      {Horde.DynamicSupervisor,
+       name: name,
+       strategy: :one_for_one,
+       distribution_strategy: LocalQuorumOfTwo,
+       members: [name]}
+    )
+
+    {:ok, pid} =
+      Horde.DynamicSupervisor.start_child(name, {Task, fn -> Process.sleep(:infinity) end})
+
+    ref = Process.monitor(pid)
+
+    send(Process.whereis(name), {:set_members, [name]})
+
+    assert_receive {:DOWN, ^ref, _, _, _}, 1_000
+  end
+
   describe "redistribute" do
     test "processes should redistribute to new member nodes as they are added", context do
       n2_cspecs =
