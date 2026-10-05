@@ -2,9 +2,7 @@ on: push
 
 env:
   ELIXIR_ERL_OPTIONS: -kernel prevent_overlapping_partitions false
-  # Latest versions; used for compile/format checks and dialyzer.
-  # Keep in sync with the newest entries in the test matrix below
-  # (GitHub Actions does not allow `env` in `strategy.matrix`).
+  # Latest versions; used by the static checks job.
   LATEST_ELIXIR: "1.20"
   LATEST_OTP: "29"
 
@@ -31,18 +29,11 @@ jobs:
           otp-version: ${{ matrix.otp-version }}
 
       - run: mix deps.get
-
-      - run: mix compile --warnings-as-errors
-        if: matrix.elixir-version == env.LATEST_ELIXIR && matrix.otp-version == env.LATEST_OTP
-
-      - run: mix format --check-formatted
-        if: matrix.elixir-version == env.LATEST_ELIXIR && matrix.otp-version == env.LATEST_OTP
-
       - run: mix test --max-cases 8
 
-  dialyzer:
+  static-checks:
     runs-on: ubuntu-latest
-    name: Dialyzer
+    name: Static checks
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
@@ -60,5 +51,7 @@ jobs:
 
       - run: mkdir -p priv/plts
       - run: mix deps.get
+      - run: mix compile --warnings-as-errors
+      - run: mix format --check-formatted
       - run: mix dialyzer --plt
       - run: mix dialyzer
