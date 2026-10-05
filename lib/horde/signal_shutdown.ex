@@ -2,7 +2,6 @@ defmodule Horde.SignalShutdown do
   @moduledoc false
 
   use GenServer
-  require Logger
 
   @spec child_spec(keyword()) :: Supervisor.child_spec()
   def child_spec(options) do

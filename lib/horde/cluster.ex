@@ -1,6 +1,4 @@
 defmodule Horde.Cluster do
-  require Logger
-
   @moduledoc """
   Public functions to join and leave hordes.
 
