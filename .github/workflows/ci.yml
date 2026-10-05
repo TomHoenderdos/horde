@@ -9,15 +9,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        elixir-version: [1.15, 1.14, 1.13]
-        otp-version: [26, 25, 24]
+        elixir-version: ["1.20", "1.19", "1.18"]
+        otp-version: ["29", "28", "27"]
         exclude:
-          - elixir-version: 1.13
-            otp-version: 26
+          - elixir-version: "1.19"
+            otp-version: "29"
+          - elixir-version: "1.18"
+            otp-version: "29"
 
     name: Tests
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.elixir-version }}
@@ -26,10 +28,10 @@ jobs:
       - run: mix deps.get
 
       - run: mix compile --warnings-as-errors
-        if: matrix.elixir-version == 1.15 && matrix.otp-version == 26
+        if: matrix.elixir-version == '1.20' && matrix.otp-version == '29'
 
       - run: mix format --check-formatted
-        if: matrix.elixir-version == 1.15 && matrix.otp-version == 26
+        if: matrix.elixir-version == '1.20' && matrix.otp-version == '29'
 
       - run: mix test --max-cases 8
 
@@ -37,19 +39,19 @@ jobs:
     runs-on: ubuntu-latest
     name: Dialyzer
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          elixir-version: 1.15
-          otp-version: 26
+          elixir-version: "1.20"
+          otp-version: "29"
 
       - name: Restore PLT cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: priv/plts
-          key: plt-${{ runner.os }}-1.15-26-${{ hashFiles('mix.lock') }}
+          key: plt-${{ runner.os }}-1.20-29-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            plt-${{ runner.os }}-1.15-26-
+            plt-${{ runner.os }}-1.20-29-
 
       - run: mkdir -p priv/plts
       - run: mix deps.get
