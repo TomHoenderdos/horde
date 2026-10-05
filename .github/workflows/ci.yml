@@ -2,6 +2,9 @@ on: push
 
 env:
   ELIXIR_ERL_OPTIONS: -kernel prevent_overlapping_partitions false
+  # Latest versions; used by the static checks job.
+  LATEST_ELIXIR: "1.20"
+  LATEST_OTP: "29"
 
 jobs:
   test:
@@ -9,49 +12,46 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        elixir-version: [1.15, 1.14, 1.13]
-        otp-version: [26, 25, 24]
+        elixir-version: ["1.20", "1.19", "1.18"]
+        otp-version: ["29", "28", "27"]
         exclude:
-          - elixir-version: 1.13
-            otp-version: 26
+          - elixir-version: "1.19"
+            otp-version: "29"
+          - elixir-version: "1.18"
+            otp-version: "29"
 
     name: Tests
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.elixir-version }}
           otp-version: ${{ matrix.otp-version }}
 
       - run: mix deps.get
-
-      - run: mix compile --warnings-as-errors
-        if: matrix.elixir-version == 1.15 && matrix.otp-version == 26
-
-      - run: mix format --check-formatted
-        if: matrix.elixir-version == 1.15 && matrix.otp-version == 26
-
       - run: mix test --max-cases 8
 
-  dialyzer:
+  static-checks:
     runs-on: ubuntu-latest
-    name: Dialyzer
+    name: Static checks
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          elixir-version: 1.15
-          otp-version: 26
+          elixir-version: ${{ env.LATEST_ELIXIR }}
+          otp-version: ${{ env.LATEST_OTP }}
 
       - name: Restore PLT cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: priv/plts
-          key: plt-${{ runner.os }}-1.15-26-${{ hashFiles('mix.lock') }}
+          key: plt-${{ runner.os }}-${{ env.LATEST_ELIXIR }}-${{ env.LATEST_OTP }}-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            plt-${{ runner.os }}-1.15-26-
+            plt-${{ runner.os }}-${{ env.LATEST_ELIXIR }}-${{ env.LATEST_OTP }}-
 
       - run: mkdir -p priv/plts
       - run: mix deps.get
+      - run: mix compile --warnings-as-errors
+      - run: mix format --check-formatted
       - run: mix dialyzer --plt
       - run: mix dialyzer

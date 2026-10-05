@@ -22,9 +22,13 @@ defmodule Horde.UniformDistribution do
         {:error, :no_alive_nodes}
 
       members ->
+        # Seed the ring with a node rather than using `HashRing.new/0`, whose
+        # empty struct violates the opaque `:gb_trees.tree()` type (dialyzer).
+        [first | rest] = Map.keys(members)
+
         chosen_member =
-          HashRing.new()
-          |> HashRing.add_nodes(Map.keys(members))
+          HashRing.new(first)
+          |> HashRing.add_nodes(rest)
           |> HashRing.key_to_node(identifier)
 
         {:ok, Map.get(members, chosen_member)}
